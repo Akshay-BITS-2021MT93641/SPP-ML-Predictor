@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="ERROR" strict="false" monitorInterval="10">
+	<Properties>
+		<Property name="baseDir">/run/media/WORK/MTechDissertation/spp-ml-logs</Property>
+	</Properties>
+	
+	<Appenders>
+		<Console name="console" target="SYSTEM_OUT">
+			<PatternLayout
+				pattern="[%d] [%p] [%c] [%t] [%F: %L] %m%n" />
+		</Console>
+		<RollingFile name="sppRoll"
+			fileName="${baseDir}/spp-ml.log"
+			filePattern="${baseDir}/spp-ml-%d{yyyy-MM-dd}.log.gz"
+			filePermissions="rwxrwxrwx">
+			<PatternLayout
+				pattern="[%d] [%p] [%c] [%t] [%F: %L] %m%n" />
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+			</Policies>
+			<DefaultRolloverStrategy>
+				<Delete basePath="${baseDir}">
+					<IfLastModified age="10d" />
+				</Delete>
+			</DefaultRolloverStrategy>
+		</RollingFile>
+	</Appenders>
+	<Loggers>
+		<Logger name="io.spp" level="debug" additivity="false">
+			<AppenderRef ref="console" />
+			<AppenderRef ref="sppRoll" />
+		</Logger>
+		<Root level="info" includeLocation="true">
+			<AppenderRef ref="console" />
+			<AppenderRef ref="sppRoll" />
+		</Root>
+	</Loggers>
+</Configuration>

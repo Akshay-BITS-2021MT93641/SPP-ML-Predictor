@@ -1,0 +1,16 @@
+<loadSecurityReturnsCollectionName>
+securityReturns
+
+<loadSecurityReturnsMql>
+[
+  {
+    $match:
+      {
+        exchangeCode: "500086",
+        date: {
+          $gte: "%s",
+          $lte: "%s"
+        }
+      }
+  }
+]
