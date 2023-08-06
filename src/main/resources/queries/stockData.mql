@@ -14,3 +14,54 @@ securityReturns
       }
   }
 ]
+
+<loadIndexReturnsCollectionName>
+indexReturns
+
+<loadIndexReturnsMql>
+[
+  {
+    $match:
+      {
+        index: "SENSEX",
+        date: {
+          $gte: "%s",
+          $lte: "%s"
+        }
+      }
+  }
+]
+
+<loadSecurityAnalyticsCollectionName>
+securityAnalytics
+
+<loadSecurityAnalyticsMql>
+[
+  {
+    $match:
+      {
+        exchangeCode: "500086",
+        date: {
+          $gte: "%s",
+          $lte: "%s"
+        }
+      }
+  }
+]
+
+<loadSecurityTrainingPScoreCollectionName>
+trainingPScore
+
+<loadSecurityTrainingPScoreMql>
+[
+  {
+    $match:
+      {
+        exchangeCode: "500086",
+        date: {
+          $gte: "%s",
+          $lte: "%s"
+        }
+      }
+  }
+]
