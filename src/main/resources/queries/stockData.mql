@@ -1,3 +1,18 @@
+<loadSecurityExchangeCodesCollectionName>
+organizations
+
+<loadSecurityExchangeCodesMql>
+[
+  {
+    $match:
+      {
+        exchange:"%s",
+        status:"Active"
+        %s
+      }
+  }  
+]
+
 <loadSecurityReturnsCollectionName>
 securityReturns
 
@@ -6,11 +21,12 @@ securityReturns
   {
     $match:
       {
-        exchangeCode: "500086",
+        exchange: "%s",
         date: {
           $gte: "%s",
           $lte: "%s"
-        }
+        },
+        exchangeCode: "%s"
       }
   }
 ]
@@ -23,7 +39,8 @@ indexReturns
   {
     $match:
       {
-        index: "SENSEX",
+        exchange: "%s",
+        index: "%s",
         date: {
           $gte: "%s",
           $lte: "%s"
@@ -40,11 +57,12 @@ securityAnalytics
   {
     $match:
       {
-        exchangeCode: "500086",
+        exchange: "%s",
         date: {
           $gte: "%s",
           $lte: "%s"
-        }
+        },
+        exchangeCode: "%s"
       }
   }
 ]
@@ -57,11 +75,13 @@ trainingPScore
   {
     $match:
       {
-        exchangeCode: "500086",
+        exchange: "%s",
+        index: "%s",
         date: {
           $gte: "%s",
           $lte: "%s"
-        }
+        },
+        exchangeCode: "%s"
       }
   }
 ]

@@ -1,16 +1,27 @@
 package io.spp.ml.predictor;
 
+import static io.spp.ml.predictor.SppGlobalContext.exchangeCodeKey;
+import static io.spp.ml.predictor.SppGlobalContext.exchangeKey;
+import static io.spp.ml.predictor.SppGlobalContext.indexKey;
+import static io.spp.ml.predictor.SppGlobalContext.trainingEndDateKey;
+import static io.spp.ml.predictor.SppGlobalContext.trainingStartDateKey;
+
 import org.apache.spark.sql.SparkSession;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.Scope;
 import org.springframework.core.env.Environment;
 
+import io.fop.context.impl.ApplicationContextHolder;
 import io.spp.ml.predictor.dao.QueryFiles;
 import io.spp.ml.predictor.dao.SppMLTrainingDao;
 import io.spp.ml.predictor.training.SppTrainer;
+import io.spp.ml.predictor.training.SppTrainingTask;
 import io.spp.ml.predictor.util.SppUtil;
 
 @Configuration
@@ -20,6 +31,19 @@ public class SppApplication
     public static void main(String[] args)
     {
         QueryFiles.load();
+        String trainingStartDate = args[0];
+        String trainingEndDate = args[1];
+        String exchange = args[2];
+        String index = args[3];
+        String exchangeCode = args.length==5 ? args[4] : null;
+        
+        SppGlobalContext sppGlobalContext = new SppGlobalContext();
+        sppGlobalContext.add(trainingStartDateKey, trainingStartDate);
+        sppGlobalContext.add(trainingEndDateKey, trainingEndDate);
+        sppGlobalContext.add(exchangeKey, exchange);
+        sppGlobalContext.add(indexKey, index);
+        sppGlobalContext.add(exchangeCodeKey, exchangeCode);
+        ApplicationContextHolder.setGlobalContext(sppGlobalContext);
         
         try(ConfigurableApplicationContext sppAppContext = new AnnotationConfigApplicationContext(SppApplication.class))
         {
@@ -48,5 +72,13 @@ public class SppApplication
     public SppTrainer sppTrainer()
     {
         return new SppTrainer();
+    }
+    
+    @Lazy
+    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+    @Bean
+    public SppTrainingTask sppTrainingTask(String exchangeCode)
+    {
+        return new SppTrainingTask(exchangeCode);
     }
 }

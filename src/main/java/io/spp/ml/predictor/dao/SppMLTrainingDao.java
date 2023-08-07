@@ -1,27 +1,52 @@
 package io.spp.ml.predictor.dao;
 
+import static io.spp.ml.predictor.SppGlobalContext.exchangeCodeKey;
+import static io.spp.ml.predictor.SppGlobalContext.exchangeKey;
+import static io.spp.ml.predictor.SppGlobalContext.indexKey;
+import static io.spp.ml.predictor.SppGlobalContext.trainingEndDateKey;
+import static io.spp.ml.predictor.SppGlobalContext.trainingStartDateKey;
+
+import java.io.Serializable;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
+
+import io.fop.context.impl.ApplicationContextHolder;
+import io.spp.ml.predictor.SppGlobalContext;
 
 public class SppMLTrainingDao
-{
-    @Autowired
-    private Environment environment;
-    
+{  
     @Autowired
     private SparkSession spark;
     
-    public Dataset<Row> loadSecurityReturns()
+    public Dataset<Row> loadSecurityExchangeCodes()
     {
-        String startDateStr = environment.getProperty("spp.training.startDate");
-        String endDateStr = environment.getProperty("spp.training.endDate");
+        SppGlobalContext sppGlobalContext = (SppGlobalContext)ApplicationContextHolder.getGlobalContext(SppGlobalContext.class.getSimpleName());
+        String exchange = sppGlobalContext.fetch(exchangeKey);
+        String exchangeCodeGlobal = sppGlobalContext.fetch(exchangeCodeKey);
+        String securityCodesCollection = QueryHolder.getQuery(QueryFiles.SPP_STOCK_DATA_MQL, "loadSecurityExchangeCodesCollectionName");
+        String securityCodesMql = QueryHolder.getQuery(QueryFiles.SPP_STOCK_DATA_MQL, "loadSecurityExchangeCodesMql");
+        securityCodesMql = String.format(securityCodesMql, exchange, (StringUtils.isNotBlank(exchangeCodeGlobal) ? ", exchangeCode:\""+exchangeCodeGlobal + "\"" : ""));
+        
+        return spark.read().format("mongodb")
+                .option("spark.mongodb.read.collection", securityCodesCollection)
+                .option("spark.mongodb.read.aggregation.pipeline", securityCodesMql)
+                .load();
+    }
+    
+    public Dataset<Row> loadSecurityReturns(String exchangeCode)
+    {
+        SppGlobalContext sppGlobalContext = (SppGlobalContext)ApplicationContextHolder.getGlobalContext(SppGlobalContext.class.getSimpleName());
+        String startDateStr = sppGlobalContext.fetch(trainingStartDateKey);
+        String endDateStr = sppGlobalContext.fetch(trainingEndDateKey);
+        String exchange = sppGlobalContext.fetch(exchangeKey);
         
         String securityReturnsCollection = QueryHolder.getQuery(QueryFiles.SPP_STOCK_DATA_MQL, "loadSecurityReturnsCollectionName");
         String securityReturnsMql = QueryHolder.getQuery(QueryFiles.SPP_STOCK_DATA_MQL, "loadSecurityReturnsMql");
-        securityReturnsMql = String.format(securityReturnsMql, startDateStr, endDateStr);
+        securityReturnsMql = String.format(securityReturnsMql, exchange, startDateStr, endDateStr, exchangeCode);
         
         return spark.read().format("mongodb")
                     .option("spark.mongodb.read.collection", securityReturnsCollection)
@@ -31,12 +56,15 @@ public class SppMLTrainingDao
     
     public Dataset<Row> loadIndexReturns()
     {
-        String startDateStr = environment.getProperty("spp.training.startDate");
-        String endDateStr = environment.getProperty("spp.training.endDate");
+        SppGlobalContext sppGlobalContext = (SppGlobalContext)ApplicationContextHolder.getGlobalContext(SppGlobalContext.class.getSimpleName());
+        String startDateStr = sppGlobalContext.fetch(trainingStartDateKey);
+        String endDateStr = sppGlobalContext.fetch(trainingEndDateKey);
+        String exchange = sppGlobalContext.fetch(exchangeKey);
+        String index = sppGlobalContext.fetch(indexKey);
         
         String indexReturnsCollection = QueryHolder.getQuery(QueryFiles.SPP_STOCK_DATA_MQL, "loadIndexReturnsCollectionName");
         String indexReturnsMql = QueryHolder.getQuery(QueryFiles.SPP_STOCK_DATA_MQL, "loadIndexReturnsMql");
-        indexReturnsMql = String.format(indexReturnsMql, startDateStr, endDateStr);
+        indexReturnsMql = String.format(indexReturnsMql, exchange, index, startDateStr, endDateStr);
         
         return spark.read().format("mongodb")
                     .option("spark.mongodb.read.collection", indexReturnsCollection)
@@ -44,14 +72,16 @@ public class SppMLTrainingDao
                     .load();
     } 
     
-    public Dataset<Row> loadSecurityAnalytics()
+    public Dataset<Row> loadSecurityAnalytics(String exchangeCode)
     {
-        String startDateStr = environment.getProperty("spp.training.startDate");
-        String endDateStr = environment.getProperty("spp.training.endDate");
+        SppGlobalContext sppGlobalContext = (SppGlobalContext)ApplicationContextHolder.getGlobalContext(SppGlobalContext.class.getSimpleName());
+        String startDateStr = sppGlobalContext.fetch(trainingStartDateKey);
+        String endDateStr = sppGlobalContext.fetch(trainingEndDateKey);
+        String exchange = sppGlobalContext.fetch(exchangeKey);
         
         String securityReturnsCollection = QueryHolder.getQuery(QueryFiles.SPP_STOCK_DATA_MQL, "loadSecurityAnalyticsCollectionName");
         String securityReturnsMql = QueryHolder.getQuery(QueryFiles.SPP_STOCK_DATA_MQL, "loadSecurityAnalyticsMql");
-        securityReturnsMql = String.format(securityReturnsMql, startDateStr, endDateStr);
+        securityReturnsMql = String.format(securityReturnsMql, exchange, startDateStr, endDateStr, exchangeCode);
         
         return spark.read().format("mongodb")
                     .option("spark.mongodb.read.collection", securityReturnsCollection)
@@ -59,14 +89,17 @@ public class SppMLTrainingDao
                     .load();
     }
     
-    public Dataset<Row> loadSecurityTrainingPScore()
+    public Dataset<Row> loadSecurityTrainingPScore(String exchangeCode)
     {
-        String startDateStr = environment.getProperty("spp.training.startDate");
-        String endDateStr = environment.getProperty("spp.training.endDate");
+        SppGlobalContext sppGlobalContext = (SppGlobalContext)ApplicationContextHolder.getGlobalContext(SppGlobalContext.class.getSimpleName());
+        String startDateStr = sppGlobalContext.fetch(trainingStartDateKey);
+        String endDateStr = sppGlobalContext.fetch(trainingEndDateKey);
+        String exchange = sppGlobalContext.fetch(exchangeKey);
+        String index = sppGlobalContext.fetch(indexKey);
         
         String securityTrainingPScoreCollection = QueryHolder.getQuery(QueryFiles.SPP_STOCK_DATA_MQL, "loadSecurityTrainingPScoreCollectionName");
         String securityTrainingPScoreMql = QueryHolder.getQuery(QueryFiles.SPP_STOCK_DATA_MQL, "loadSecurityTrainingPScoreMql");
-        securityTrainingPScoreMql = String.format(securityTrainingPScoreMql, startDateStr, endDateStr);
+        securityTrainingPScoreMql = String.format(securityTrainingPScoreMql, exchange, index, startDateStr, endDateStr, exchangeCode);
         
         return spark.read().format("mongodb")
                     .option("spark.mongodb.read.collection", securityTrainingPScoreCollection)
