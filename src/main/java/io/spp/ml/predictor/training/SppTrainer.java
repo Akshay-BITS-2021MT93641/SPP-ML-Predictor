@@ -1,85 +1,37 @@
 package io.spp.ml.predictor.training;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.List;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import io.spp.ml.predictor.dao.SppMLTrainingDao;
 
-public class SppTrainer implements ApplicationContextAware
+public class SppTrainer
 {
     @Autowired
     private SppMLTrainingDao sppMLTrainingDao;
     
-    private ExecutorService executorService;
-    
-    public SppTrainer() 
-    {
-        executorService = Executors.newWorkStealingPool();
-    }
-    
     public void train()
     {
-        Map<String, CompletableFuture<?>> futures = new HashMap<>();
+        Dataset<Row> securityExchangeCodesDf = sppMLTrainingDao.loadSecurityExchangeCodes().select("exchangeCode").cache();
+        List<Row> exchangeCodesList = securityExchangeCodesDf.collectAsList();
+        Dataset<Row> indexReturnDf = sppMLTrainingDao.loadIndexReturns();
+        Dataset<Row> securityReturnDf = sppMLTrainingDao.loadSecurityReturns(exchangeCodesList);
+        Dataset<Row> securityAnalyticsDf = sppMLTrainingDao.loadSecurityAnalytics(exchangeCodesList);
+        Dataset<Row> securityTrainingPScoreDf = sppMLTrainingDao.loadSecurityTrainingPScore(exchangeCodesList);
         
-        Dataset<Row> securityExchangeCodesDf = sppMLTrainingDao.loadSecurityExchangeCodes();
+        Dataset<Row> securityDataAll = securityReturnDf.withColumnRenamed("returns", "securityReturns")
+                                                                              .join(securityAnalyticsDf, new String[] {"exchange", "exchangeCode", "isin", "date"})
+                                                                              .join(indexReturnDf.withColumnRenamed("returns", "indexReturns"), new String[] {"exchange", "date"})
+                                                                              .join(securityTrainingPScoreDf, new String[] {"exchange", "exchangeCode", "isin", "date"})
+                                                                              .orderBy("date");
         
-        securityExchangeCodesDf.toLocalIterator().forEachRemaining(r->{
-            
-            String exchangeCode = r.getString(0);
-            SppTrainingTask sppTrainingTask = getSppTrainingTask(exchangeCode);
-            CompletableFuture<?> future = CompletableFuture.runAsync(sppTrainingTask, executorService);
-            futures.put(exchangeCode, future);
-            
-        });
+        securityDataAll.printSchema();
         
-//        securityExchangeCodesDf.select("exchangeCode")
-//        .foreach(r->{
-//            
-//            String exchangeCode = r.getString(0);
-//            SppTrainingTask sppTrainingTask = getSppTrainingTask(exchangeCode);
-//            CompletableFuture<?> future = CompletableFuture.runAsync(sppTrainingTask, executorService);
-//            futures.put(exchangeCode, future);
-//        });
+    }
         
-       waitForCompletion(futures);
-    }
-    
-    private void waitForCompletion(Map<String, CompletableFuture<?>> futures)
-    {
-        CompletableFuture<?> futureFinal = CompletableFuture.allOf(futures.values().toArray(new CompletableFuture[] {}));
-        while(!futureFinal.isDone())
-        {
-            try
-            {
-                Thread.sleep(1000);
-            }
-            catch (InterruptedException e)
-            {
-                
-            }
-        }
-    }
-
-    private ApplicationContext applicationContext;
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException
-    {
-        this.applicationContext = applicationContext;
-    }
-    
-    private SppTrainingTask getSppTrainingTask(String exchangeCode)
-    {
-        return applicationContext.getBean(SppTrainingTask.class, exchangeCode);
-    }
+        
+        
 }

@@ -7,22 +7,19 @@ import static io.spp.ml.predictor.SppGlobalContext.trainingEndDateKey;
 import static io.spp.ml.predictor.SppGlobalContext.trainingStartDateKey;
 
 import org.apache.spark.sql.SparkSession;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.context.annotation.Scope;
 import org.springframework.core.env.Environment;
 
 import io.fop.context.impl.ApplicationContextHolder;
 import io.spp.ml.predictor.dao.QueryFiles;
 import io.spp.ml.predictor.dao.SppMLTrainingDao;
 import io.spp.ml.predictor.training.SppTrainer;
-import io.spp.ml.predictor.training.SppTrainingTask;
 import io.spp.ml.predictor.util.SppUtil;
+import io.spp.ml.predictor.util.SpringContextHolder;
 
 @Configuration
 @PropertySource({"classpath:application-${env:local}.properties"})
@@ -50,7 +47,6 @@ public class SppApplication
             SppTrainer sppTrainer = sppAppContext.getBean(SppTrainer.class);
             sppTrainer.train();
         }
-        
     }
     
     @Bean
@@ -63,22 +59,28 @@ public class SppApplication
     }
     
     @Bean
-    public SppMLTrainingDao sppMLTrainingDao()
-    {
-        return new SppMLTrainingDao();
-    }
-    
-    @Bean
     public SppTrainer sppTrainer()
     {
         return new SppTrainer();
     }
     
-    @Lazy
-    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
     @Bean
-    public SppTrainingTask sppTrainingTask(String exchangeCode)
+    public SppMLTrainingDao sppMLTrainingDao()
     {
-        return new SppTrainingTask(exchangeCode);
+        return new SppMLTrainingDao();
+    }
+    
+//    @Lazy
+//    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+//    @Bean
+//    public SppTrainingTask sppTrainingTask(String exchangeCode)
+//    {
+//        return new SppTrainingTask(exchangeCode);
+//    }
+    
+    @Bean
+    public SpringContextHolder springContextHolder()
+    {
+        return new SpringContextHolder();
     }
 }

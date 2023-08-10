@@ -26,7 +26,7 @@ securityReturns
           $gte: "%s",
           $lte: "%s"
         },
-        exchangeCode: "%s"
+        exchangeCode: {$in:[%s]}
       }
   }
 ]
@@ -62,7 +62,7 @@ securityAnalytics
           $gte: "%s",
           $lte: "%s"
         },
-        exchangeCode: "%s"
+        exchangeCode: {$in:[%s]}
       }
   }
 ]
@@ -81,7 +81,7 @@ trainingPScore
           $gte: "%s",
           $lte: "%s"
         },
-        exchangeCode: "%s"
+        exchangeCode: {$in:[%s]}
       }
   }
 ]
