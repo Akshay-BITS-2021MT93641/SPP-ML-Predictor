@@ -70,14 +70,6 @@ public class SppApplication
         return new SppMLTrainingDao();
     }
     
-//    @Lazy
-//    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-//    @Bean
-//    public SppTrainingTask sppTrainingTask(String exchangeCode)
-//    {
-//        return new SppTrainingTask(exchangeCode);
-//    }
-    
     @Bean
     public SpringContextHolder springContextHolder()
     {

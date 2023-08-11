@@ -2,6 +2,7 @@ package io.spp.ml.predictor.training;
 
 import java.util.List;
 
+import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,9 +28,15 @@ public class SppTrainer
                                                                               .join(indexReturnDf.withColumnRenamed("returns", "indexReturns"), new String[] {"exchange", "date"})
                                                                               .join(securityTrainingPScoreDf, new String[] {"exchange", "exchangeCode", "isin", "date"})
                                                                               .orderBy("date");
-        
-        securityDataAll.printSchema();
-        
+
+
+        exchangeCodesList.forEach(r->{
+            
+            String exchangeCode = r.getString(0);
+            Dataset<Row> securityDataForExchangeCode = securityDataAll.where(new Column("exchangeCode").equalTo(exchangeCode));
+            securityDataForExchangeCode.printSchema();
+            
+        });
     }
         
         
